@@ -578,19 +578,6 @@ _CONFIGS = [
         policy_metadata={"reset_pose": [0, -1.5, 1.5, 0, 0, 0]},
     ),
     TrainConfig(
-        name="pi05_aloha_robotwin_clean",
-        model=pi0_config.Pi0Config(pi05=True, 
-                                   action_dim = 32, 
-                                   action_horizon = 50,
-                                   max_token_len=200),
-        data=LeRobotAlohaDataConfig(
-            assets=AssetsConfig(asset_id="robotwin_clean"),
-            use_delta_joint_actions=True,
-            adapt_to_pi=False
-        ),
-        policy_metadata={"reset_pose": [0, -1.5, 1.5, 0, 0, 0]},
-    ),
-    TrainConfig(
         name="pi0_aloha_towel",
         model=pi0_config.Pi0Config(),
         data=LeRobotAlohaDataConfig(
