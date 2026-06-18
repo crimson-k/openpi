@@ -17,6 +17,7 @@ from examples.aloha_real import constants
 
 
 class ImageRecorder:
+
     def __init__(self, init_node=True, is_debug=False):
         self.is_debug = is_debug
         self.bridge = CvBridge()
@@ -65,9 +66,8 @@ class ImageRecorder:
         # setattr(self, f'{cam_name}_nsecs', data.images[0].header.stamp.nsecs)
         # cv2.imwrite('/home/lucyshi/Desktop/sample.jpg', cv_image)
         if self.is_debug:
-            getattr(self, f"{cam_name}_timestamps").append(
-                data.images[0].header.stamp.secs + data.images[0].header.stamp.nsecs * 1e-9
-            )
+            getattr(self, f"{cam_name}_timestamps").append(data.images[0].header.stamp.secs +
+                                                           data.images[0].header.stamp.nsecs * 1e-9)
 
     def image_cb_cam_high(self, data):
         cam_name = "cam_high"
@@ -88,7 +88,7 @@ class ImageRecorder:
     def get_images(self):
         image_dict = {}
         for cam_name in self.camera_names:
-            while getattr(self, f"{cam_name}_timestamp") <= self.cam_last_timestamps[cam_name]:
+            while (getattr(self, f"{cam_name}_timestamp") <= self.cam_last_timestamps[cam_name]):
                 time.sleep(0.00001)
             rgb_image = getattr(self, f"{cam_name}_rgb_image")
             depth_image = getattr(self, f"{cam_name}_depth_image")
@@ -98,6 +98,7 @@ class ImageRecorder:
         return image_dict
 
     def print_diagnostics(self):
+
         def dt_helper(l):
             l = np.array(l)
             diff = l[1:] - l[:-1]
@@ -110,6 +111,7 @@ class ImageRecorder:
 
 
 class Recorder:
+
     def __init__(self, side, init_node=True, is_debug=False):
         self.secs = None
         self.nsecs = None
@@ -157,6 +159,7 @@ class Recorder:
             self.gripper_command_timestamps.append(time.time())
 
     def print_diagnostics(self):
+
         def dt_helper(l):
             l = np.array(l)
             diff = l[1:] - l[:-1]
@@ -200,13 +203,19 @@ def move_grippers(bot_list, target_pose_list, move_time):
         for curr_pose, target_pose in zip(curr_pose_list, target_pose_list)
     ]
 
-    with open(f"/data/gripper_traj_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.jsonl", "a") as f:
+    with open(
+            f"/data/gripper_traj_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.jsonl",
+            "a",
+    ) as f:
         for t in range(num_steps):
             d = {}
             for bot_id, bot in enumerate(bot_list):
                 gripper_command.cmd = traj_list[bot_id][t]
                 bot.gripper.core.pub_single.publish(gripper_command)
-                d[bot_id] = {"obs": get_arm_gripper_positions(bot), "act": traj_list[bot_id][t]}
+                d[bot_id] = {
+                    "obs": get_arm_gripper_positions(bot),
+                    "act": traj_list[bot_id][t],
+                }
             f.write(json.dumps(d) + "\n")
             time.sleep(constants.DT)
 

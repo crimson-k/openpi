@@ -32,15 +32,13 @@ def main(args: Args) -> None:
             task=args.task,
             seed=args.seed,
         ),
-        agent=_policy_agent.PolicyAgent(
-            policy=action_chunk_broker.ActionChunkBroker(
-                policy=_websocket_client_policy.WebsocketClientPolicy(
-                    host=args.host,
-                    port=args.port,
-                ),
-                action_horizon=args.action_horizon,
-            )
-        ),
+        agent=_policy_agent.PolicyAgent(policy=action_chunk_broker.ActionChunkBroker(
+            policy=_websocket_client_policy.WebsocketClientPolicy(
+                host=args.host,
+                port=args.port,
+            ),
+            action_horizon=args.action_horizon,
+        )),
         subscribers=[
             _saver.VideoSaver(args.out_dir),
         ],

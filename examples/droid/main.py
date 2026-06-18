@@ -6,7 +6,7 @@ import datetime
 import faulthandler
 import os
 import signal
-import time
+
 from moviepy.editor import ImageSequenceClip
 import numpy as np
 from openpi_client import image_tools
@@ -18,9 +18,6 @@ import tqdm
 import tyro
 
 faulthandler.enable()
-
-# DROID data collection frequency -- we slow down execution to match this frequency
-DROID_CONTROL_FREQUENCY = 15
 
 
 @dataclasses.dataclass
@@ -42,7 +39,9 @@ class Args:
     open_loop_horizon: int = 8
 
     # Remote server parameters
-    remote_host: str = "0.0.0.0"  # point this to the IP address of the policy server, e.g., "192.168.1.100"
+    remote_host: str = (
+        "0.0.0.0"  # point this to the IP address of the policy server, e.g., "192.168.1.100"
+    )
     remote_port: int = (
         8000  # point this to the port of the policy server, default server port for openpi servers is 8000
     )
@@ -72,9 +71,10 @@ def prevent_keyboard_interrupt():
 
 def main(args: Args):
     # Make sure external camera is specified by user -- we only use one external camera for the policy
-    assert (
-        args.external_camera is not None and args.external_camera in ["left", "right"]
-    ), f"Please specify an external camera to use for the policy, choose from ['left', 'right'], but got {args.external_camera}"
+    assert args.external_camera is not None and args.external_camera in [
+        "left",
+        "right",
+    ], f"Please specify an external camera to use for the policy, choose from ['left', 'right'], but got {args.external_camera}"
 
     # Initialize the Panda environment. Using joint velocity action space and gripper position action space is very important.
     env = RobotEnv(action_space="joint_velocity", gripper_action_space="position")
@@ -98,7 +98,6 @@ def main(args: Args):
         bar = tqdm.tqdm(range(args.max_timesteps))
         print("Running rollout... press Ctrl+C to stop early.")
         for t_step in bar:
-            start_time = time.time()
             try:
                 # Get the current observation
                 curr_obs = _extract_observation(
@@ -111,19 +110,22 @@ def main(args: Args):
                 video.append(curr_obs[f"{args.external_camera}_image"])
 
                 # Send websocket request to policy server if it's time to predict a new chunk
-                if actions_from_chunk_completed == 0 or actions_from_chunk_completed >= args.open_loop_horizon:
+                if (actions_from_chunk_completed == 0 or actions_from_chunk_completed >= args.open_loop_horizon):
                     actions_from_chunk_completed = 0
 
                     # We resize images on the robot laptop to minimize the amount of data sent to the policy server
                     # and improve latency.
                     request_data = {
-                        "observation/exterior_image_1_left": image_tools.resize_with_pad(
-                            curr_obs[f"{args.external_camera}_image"], 224, 224
-                        ),
-                        "observation/wrist_image_left": image_tools.resize_with_pad(curr_obs["wrist_image"], 224, 224),
-                        "observation/joint_position": curr_obs["joint_position"],
-                        "observation/gripper_position": curr_obs["gripper_position"],
-                        "prompt": instruction,
+                        "observation/exterior_image_1_left":
+                        image_tools.resize_with_pad(curr_obs[f"{args.external_camera}_image"], 224, 224),
+                        "observation/wrist_image_left":
+                        image_tools.resize_with_pad(curr_obs["wrist_image"], 224, 224),
+                        "observation/joint_position":
+                        curr_obs["joint_position"],
+                        "observation/gripper_position":
+                        curr_obs["gripper_position"],
+                        "prompt":
+                        instruction,
                     }
 
                     # Wrap the server call in a context manager to prevent Ctrl+C from interrupting it
@@ -140,20 +142,15 @@ def main(args: Args):
                 # Binarize gripper action
                 if action[-1].item() > 0.5:
                     # action[-1] = 1.0
-                    action = np.concatenate([action[:-1], np.ones((1,))])
+                    action = np.concatenate([action[:-1], np.ones((1, ))])
                 else:
                     # action[-1] = 0.0
-                    action = np.concatenate([action[:-1], np.zeros((1,))])
+                    action = np.concatenate([action[:-1], np.zeros((1, ))])
 
                 # clip all dimensions of action to [-1, 1]
                 action = np.clip(action, -1, 1)
 
                 env.step(action)
-
-                # Sleep to match DROID data collection frequency
-                elapsed_time = time.time() - start_time
-                if elapsed_time < 1 / DROID_CONTROL_FREQUENCY:
-                    time.sleep(1 / DROID_CONTROL_FREQUENCY - elapsed_time)
             except KeyboardInterrupt:
                 break
 

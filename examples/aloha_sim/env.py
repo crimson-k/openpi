@@ -52,5 +52,7 @@ class AlohaSimEnvironment(_environment.Environment):
 
         return {
             "state": gym_obs["agent_pos"],
-            "images": {"cam_high": img},
+            "images": {
+                "cam_high": img
+            },
         }

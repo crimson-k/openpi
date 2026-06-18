@@ -43,8 +43,7 @@ class AlohaRealEnvironment(_environment.Environment):
 
         for cam_name in obs["images"]:
             img = image_tools.convert_to_uint8(
-                image_tools.resize_with_pad(obs["images"][cam_name], self._render_height, self._render_width)
-            )
+                image_tools.resize_with_pad(obs["images"][cam_name], self._render_height, self._render_width))
             obs["images"][cam_name] = einops.rearrange(img, "h w c -> c h w")
 
         return {

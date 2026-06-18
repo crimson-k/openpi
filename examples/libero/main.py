@@ -115,11 +115,9 @@ def eval_libero(args: Args) -> None:
                     img = np.ascontiguousarray(obs["agentview_image"][::-1, ::-1])
                     wrist_img = np.ascontiguousarray(obs["robot0_eye_in_hand_image"][::-1, ::-1])
                     img = image_tools.convert_to_uint8(
-                        image_tools.resize_with_pad(img, args.resize_size, args.resize_size)
-                    )
+                        image_tools.resize_with_pad(img, args.resize_size, args.resize_size))
                     wrist_img = image_tools.convert_to_uint8(
-                        image_tools.resize_with_pad(wrist_img, args.resize_size, args.resize_size)
-                    )
+                        image_tools.resize_with_pad(wrist_img, args.resize_size, args.resize_size))
 
                     # Save preprocessed image for replay video
                     replay_images.append(img)
@@ -128,16 +126,18 @@ def eval_libero(args: Args) -> None:
                         # Finished executing previous action chunk -- compute new chunk
                         # Prepare observations dict
                         element = {
-                            "observation/image": img,
-                            "observation/wrist_image": wrist_img,
-                            "observation/state": np.concatenate(
-                                (
-                                    obs["robot0_eef_pos"],
-                                    _quat2axisangle(obs["robot0_eef_quat"]),
-                                    obs["robot0_gripper_qpos"],
-                                )
-                            ),
-                            "prompt": str(task_description),
+                            "observation/image":
+                            img,
+                            "observation/wrist_image":
+                            wrist_img,
+                            "observation/state":
+                            np.concatenate((
+                                obs["robot0_eef_pos"],
+                                _quat2axisangle(obs["robot0_eef_quat"]),
+                                obs["robot0_gripper_qpos"],
+                            )),
+                            "prompt":
+                            str(task_description),
                         }
 
                         # Query model to get action
@@ -145,7 +145,7 @@ def eval_libero(args: Args) -> None:
                         assert (
                             len(action_chunk) >= args.replan_steps
                         ), f"We want to replan every {args.replan_steps} steps, but policy only predicts {len(action_chunk)} steps."
-                        action_plan.extend(action_chunk[: args.replan_steps])
+                        action_plan.extend(action_chunk[:args.replan_steps])
 
                     action = action_plan.popleft()
 
@@ -189,8 +189,12 @@ def eval_libero(args: Args) -> None:
 def _get_libero_env(task, resolution, seed):
     """Initializes and returns the LIBERO environment, along with the task description."""
     task_description = task.language
-    task_bddl_file = pathlib.Path(get_libero_path("bddl_files")) / task.problem_folder / task.bddl_file
-    env_args = {"bddl_file_name": task_bddl_file, "camera_heights": resolution, "camera_widths": resolution}
+    task_bddl_file = (pathlib.Path(get_libero_path("bddl_files")) / task.problem_folder / task.bddl_file)
+    env_args = {
+        "bddl_file_name": task_bddl_file,
+        "camera_heights": resolution,
+        "camera_widths": resolution,
+    }
     env = OffScreenRenderEnv(**env_args)
     env.seed(seed)  # IMPORTANT: seed seems to affect object positions even when using fixed initial state
     return env, task_description

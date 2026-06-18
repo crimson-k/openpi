@@ -35,6 +35,6 @@ class VideoSaver(_subscriber.Subscriber):
         logging.info(f"Saving video to {out_path}")
         imageio.mimwrite(
             out_path,
-            [np.asarray(x) for x in self._images[:: self._subsample]],
+            [np.asarray(x) for x in self._images[::self._subsample]],
             fps=50 // max(1, self._subsample),
         )

@@ -19,7 +19,11 @@ import numpy as np
 
 
 def pack_array(obj):
-    if (isinstance(obj, (np.ndarray, np.generic))) and obj.dtype.kind in ("V", "O", "c"):
+    if (isinstance(obj, (np.ndarray, np.generic))) and obj.dtype.kind in (
+            "V",
+            "O",
+            "c",
+    ):
         raise ValueError(f"Unsupported dtype: {obj.dtype}")
 
     if isinstance(obj, np.ndarray):
