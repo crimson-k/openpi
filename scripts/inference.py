@@ -5,9 +5,11 @@ import sys
 import yaml
 import numpy as np
 
-sys.path.append("./")
-sys.path.append("./policy")
-sys.path.append("./description/utils")
+REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../.."))
+os.chdir(REPO_ROOT)
+sys.path.insert(0, REPO_ROOT)
+sys.path.insert(0, os.path.join(REPO_ROOT, "policy"))
+sys.path.insert(0, os.path.join(REPO_ROOT, "description", "utils"))
 
 from envs import CONFIGS_PATH
 from generate_episode_instructions import generate_episode_descriptions
@@ -22,7 +24,11 @@ def parse_args_and_config():
     parser.add_argument("--overrides", nargs=argparse.REMAINDER)
     args = parser.parse_args()
 
-    with open(args.config, "r", encoding="utf-8") as f:
+    config_path = args.config
+    if not os.path.isabs(config_path):
+        config_path = os.path.join(REPO_ROOT, config_path)
+
+    with open(config_path, "r", encoding="utf-8") as f:
         config = yaml.safe_load(f)
 
     def parse_override_pairs(pairs):
@@ -63,10 +69,24 @@ def build_task_args(usr_args):
     if isinstance(task_config, dict):
         args = dict(task_config)
     else:
-        with open(f"./task_config/{task_config}.yml", "r", encoding="utf-8") as f:
+        task_config_path = os.path.join(REPO_ROOT, "task_config", f"{task_config}.yml")
+        with open(task_config_path, "r", encoding="utf-8") as f:
             args = yaml.load(f.read(), Loader=yaml.FullLoader)
 
-    args.update({k: v for k, v in usr_args.items() if v is not None})
+    runtime_keys = {
+        "checkpoint_dir",
+        "checkpoint_id",
+        "ckpt_setting",
+        "instruction_type",
+        "model_name",
+        "policy_name",
+        "prompt",
+        "seed",
+        "task_config",
+        "train_config_name",
+    }
+    
+    args.update({k: v for k, v in usr_args.items() if v is not None and k not in runtime_keys})
     args["task_name"] = usr_args["task_name"]
 
     with open(os.path.join(CONFIGS_PATH, "_embodiment_config.yml"), "r", encoding="utf-8") as f:
@@ -140,9 +160,11 @@ def main(usr_args):
     checkpoint_dir = usr_args.get("checkpoint_dir")
     if checkpoint_dir is None:
         checkpoint_dir = (
-            f"policy/pi05/checkpoints/{usr_args['train_config_name']}/"
+            f"{REPO_ROOT}/policy/pi05/checkpoints/{usr_args['train_config_name']}/"
             f"{usr_args['model_name']}/{usr_args.get('checkpoint_id', 30000)}"
         )
+    elif not os.path.isabs(checkpoint_dir):
+        checkpoint_dir = os.path.join(REPO_ROOT, checkpoint_dir)
 
     assets_dir = os.path.join(checkpoint_dir, "assets")
     robotwin_repo_id = None
